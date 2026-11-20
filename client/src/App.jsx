@@ -10,25 +10,14 @@ import ImportantDatesPage from './pages/ImportantDatesPage';
 import SettingsPage from './pages/SettingsPage';
 import AboutPage from './pages/AboutPage';
 import { CalendarViewPage, ProfilePage } from './pages/AdditionalPages';
+import GlobalToastContainer from './components/common/GlobalToast';
 import './App.css';
-
-// Toast Notification
-function GlobalToast() {
-  const { toast } = useApp();
-  if (!toast) return null;
-  return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl shadow-slate-900/20 border border-slate-800 text-sm animate-bounce-short">
-      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-      <span className="font-medium">{toast.message}</span>
-    </div>
-  );
-}
 
 // Protected Route Guard
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useApp();
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
   return children;
 }
@@ -65,7 +54,7 @@ export default function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <GlobalToast />
+        <GlobalToastContainer />
       </BrowserRouter>
     </AppProvider>
   );

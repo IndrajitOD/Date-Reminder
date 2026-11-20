@@ -60,8 +60,26 @@ export function AppProvider({ children }) {
     return INITIAL_GLOBAL_EVENTS;
   });
 
-  // Global Notification Toast
-  const [toast, setToast] = useState(null);
+  // Global Notification Toasts Array
+  const [toasts, setToasts] = useState([]);
+
+  // Dismiss a toast by id
+  const dismissToast = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // Add toast with auto-dismiss
+  const showToast = (message, type = 'info', title = null, duration = 4000) => {
+    const id = Date.now() + Math.random();
+    const newToast = { id, message, type, title };
+    setToasts((prev) => [newToast, ...prev].slice(0, 4)); // Stack max 4 toasts
+
+    if (duration > 0) {
+      setTimeout(() => {
+        dismissToast(id);
+      }, duration);
+    }
+  };
 
   // Sync data with backend MongoDB when authenticated
   const loadDataFromBackend = async () => {
@@ -175,34 +193,27 @@ export function AppProvider({ children }) {
     localStorage.setItem('ndr_global_events', JSON.stringify(globalEvents));
   }, [globalEvents]);
 
-  const showToast = (message, type = 'info') => {
-    setToast({ message, type, id: Date.now() });
-    setTimeout(() => {
-      setToast(null);
-    }, 4000);
-  };
-
   const login = async (email, password) => {
     const user = await loginWithFirebase(email, password);
-    showToast(`Welcome back, ${user.displayName || user.email}!`, 'success');
+    showToast('Signed in successfully.', 'success');
     return user;
   };
 
   const signInWithGoogle = async () => {
     const user = await loginWithGoogle();
-    showToast(`Signed in with Google as ${user.displayName || user.email}!`, 'success');
+    showToast('Signed in successfully with Google.', 'success');
     return user;
   };
 
   const register = async (email, password, displayName) => {
     const user = await registerWithFirebase(email, password, displayName);
-    showToast(`Account created! Welcome, ${displayName || user.email}!`, 'success');
+    showToast('Your account has been created.', 'success');
     return user;
   };
 
   const logout = async () => {
     await logoutFromFirebase();
-    showToast('Signed out successfully.', 'info');
+    showToast('Signed out successfully.', 'success');
   };
 
   // --- Personal Reminders Actions ---
@@ -406,7 +417,8 @@ export function AppProvider({ children }) {
         toggleEventSubscription,
         subscribeEntireCategory,
         updateUserSettings,
-        toast,
+        toasts,
+        dismissToast,
         showToast
       }}
     >
