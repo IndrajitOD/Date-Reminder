@@ -1,10 +1,18 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, ChevronDown, Check, Globe } from 'lucide-react';
-import { getIanaTimezoneList } from '../../utils/timezoneUtils';
+import { Search, ChevronDown, Check, MapPin } from 'lucide-react';
+import { 
+  INDIAN_REGIONS, 
+  getIndianLocationList, 
+  OFFICIAL_INDIAN_TIMEZONE, 
+  OFFICIAL_INDIAN_OFFSET 
+} from '../../utils/indianTimezoneUtils';
 
 /**
- * SearchableTimezoneSelect - Searchable IANA Timezone Dropdown
- * Displays dynamically calculated UTC offsets, groups by region or shows filtered city matches.
+ * SearchableTimezoneSelect - Indian Locations & Cities Selector
+ * Exclusively displays Indian cities and regional locations across Eastern, Northern,
+ * Southern, and Western/Central India.
+ * 
+ * Maps every selection to the single official civil IANA identifier: 'Asia/Kolkata' (IST UTC+05:30).
  */
 export default function SearchableTimezoneSelect({
   value,
@@ -17,21 +25,19 @@ export default function SearchableTimezoneSelect({
   const containerRef = useRef(null);
   const inputRef = useRef(null);
 
-  const allTimezones = useMemo(() => getIanaTimezoneList(), []);
+  // Retain selected location display preference in local state or localStorage
+  const [selectedCityLabel, setSelectedCityLabel] = useState(() => {
+    return localStorage.getItem('ndr_indian_location_label') || 'India Standard Time (IST)';
+  });
 
-  // Filter timezones based on query
-  const filteredTimezones = useMemo(() => {
-    if (!searchQuery.trim()) return allTimezones;
+  const allLocations = useMemo(() => getIndianLocationList(), []);
+
+  // Filter locations based on search query
+  const filteredLocations = useMemo(() => {
+    if (!searchQuery.trim()) return null; // When empty, display grouped
     const q = searchQuery.toLowerCase().trim();
-    return allTimezones.filter(tz => tz.searchKey.includes(q));
-  }, [allTimezones, searchQuery]);
-
-  const selectedItem = useMemo(() => {
-    return allTimezones.find(tz => tz.value === value) || {
-      value: value || 'UTC',
-      label: value || 'UTC'
-    };
-  }, [allTimezones, value]);
+    return allLocations.filter(loc => loc.searchKey.includes(q));
+  }, [allLocations, searchQuery]);
 
   // Handle outside click
   useEffect(() => {
@@ -57,8 +63,11 @@ export default function SearchableTimezoneSelect({
     }
   }, [isOpen]);
 
-  const handleSelect = (tzValue) => {
-    onChange(tzValue);
+  const handleSelect = (loc) => {
+    setSelectedCityLabel(loc.city === 'India Standard Time' ? 'India Standard Time (IST)' : loc.city);
+    localStorage.setItem('ndr_indian_location_label', loc.city === 'India Standard Time' ? 'India Standard Time (IST)' : loc.city);
+    // Persist official IANA timezone
+    onChange(OFFICIAL_INDIAN_TIMEZONE);
     setIsOpen(false);
     setSearchQuery('');
   };
@@ -75,8 +84,10 @@ export default function SearchableTimezoneSelect({
         } ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-100' : ''}`}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <Globe size={15} className="text-rose-500 shrink-0" />
-          <span className="truncate text-slate-800 font-semibold">{selectedItem.label}</span>
+          <MapPin size={15} className="text-rose-500 shrink-0" />
+          <span className="truncate text-slate-800 font-semibold">
+            {selectedCityLabel} — IST ({OFFICIAL_INDIAN_OFFSET})
+          </span>
         </div>
         <ChevronDown
           size={14}
@@ -97,44 +108,96 @@ export default function SearchableTimezoneSelect({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search city, country or timezone (e.g. Kolkata, London, New York)..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+              placeholder="Search Indian city, state, or region (e.g. Kolkata, Mumbai, Bengaluru)..."
+              className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-slate-800 placeholder:text-slate-400 font-medium"
             />
           </div>
 
-          {/* Scrollable list */}
-          <div className="max-h-60 overflow-y-auto divide-y divide-slate-50">
-            {filteredTimezones.length === 0 ? (
-              <div className="px-3 py-4 text-xs text-slate-400 text-center">
-                No matching timezone found for "{searchQuery}"
-              </div>
+          {/* Info pill about Indian Standard Time */}
+          <div className="px-2.5 py-1.5 bg-rose-50/60 rounded-xl border border-rose-100 flex items-center justify-between text-[11px] text-rose-700">
+            <span>Official Civil Timezone: <strong>Asia/Kolkata (IST)</strong></span>
+            <span className="font-extrabold">{OFFICIAL_INDIAN_OFFSET}</span>
+          </div>
+
+          {/* Scrollable Location List */}
+          <div className="max-h-60 overflow-y-auto space-y-3 pr-1 text-xs">
+            {filteredLocations !== null ? (
+              // Filtered Flat Results
+              filteredLocations.length === 0 ? (
+                <div className="py-6 text-center text-slate-400 font-medium text-xs">
+                  No Indian city found matching &quot;{searchQuery}&quot;
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {filteredLocations.map(loc => {
+                    const isSelected = selectedCityLabel.includes(loc.city);
+                    return (
+                      <button
+                        key={loc.id}
+                        type="button"
+                        onClick={() => handleSelect(loc)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-rose-50 text-rose-600 font-bold'
+                            : 'hover:bg-slate-50 text-slate-700 font-medium'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="truncate">{loc.city}</span>
+                          <span className="text-[10px] text-slate-400 font-normal">({loc.state})</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                            IST
+                          </span>
+                          {isSelected && <Check size={14} className="text-rose-500 stroke-[2.5]" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )
             ) : (
-              filteredTimezones.slice(0, 150).map((tz) => {
-                const isSelected = tz.value === value;
-                return (
-                  <button
-                    type="button"
-                    key={tz.value}
-                    onClick={() => handleSelect(tz.value)}
-                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-xs transition-colors cursor-pointer rounded-xl ${
-                      isSelected
-                        ? 'bg-rose-50 font-bold text-rose-600'
-                        : 'text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{tz.value}</p>
-                      <p className="text-[10px] text-slate-400">{tz.region} • {tz.city}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
-                        {tz.offset}
-                      </span>
-                      {isSelected && <Check size={14} className="text-rose-500 stroke-[2.5]" />}
-                    </div>
-                  </button>
-                );
-              })
+              // Grouped by Region
+              INDIAN_REGIONS.map(group => (
+                <div key={group.region} className="space-y-1">
+                  <div className="px-2.5 py-1 text-[10px] font-black tracking-wider uppercase text-slate-400 bg-slate-50 rounded-lg">
+                    {group.region}
+                  </div>
+                  <div className="space-y-0.5">
+                    {group.locations.map(loc => {
+                      const isDefault = loc.code === 'IST';
+                      const isSelected = selectedCityLabel.includes(loc.city);
+
+                      return (
+                        <button
+                          key={loc.city}
+                          type="button"
+                          onClick={() => handleSelect({ ...loc, city: isDefault ? 'India Standard Time' : loc.city })}
+                          className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-left transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'bg-rose-50 text-rose-600 font-bold'
+                              : 'hover:bg-slate-50 text-slate-700 font-medium'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="truncate">{loc.city}</span>
+                            {!isDefault && (
+                              <span className="text-[10px] text-slate-400 font-normal">({loc.state})</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                              IST
+                            </span>
+                            {isSelected && <Check size={14} className="text-rose-500 stroke-[2.5]" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>
