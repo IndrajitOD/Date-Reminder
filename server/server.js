@@ -32,6 +32,15 @@ app.use(express.json());
 initFirebaseAdmin();
 
 // Health check endpoint
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'Date Reminder Backend API v1',
+    message: 'Backend server is running smoothly',
+    timestamp: new Date()
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
