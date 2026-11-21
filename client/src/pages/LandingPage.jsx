@@ -99,9 +99,6 @@ export default function LandingPage() {
               <span className="font-extrabold text-base tracking-tight text-slate-900 block leading-tight">
                 Date<span className="text-rose-500">Reminder</span>
               </span>
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest block">
-                Next-Gen Alerts
-              </span>
             </div>
           </div>
 
@@ -189,12 +186,6 @@ export default function LandingPage() {
       <main className="flex-1 pt-24 sm:pt-28 pb-16">
         {/* 1. Hero Section */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          {/* Introductory badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-100 mb-5 shadow-xs">
-            <Sparkles size={13} className="stroke-[2.5]" />
-            <span>Intelligent Personal Date Alerts</span>
-          </div>
-
           {/* Main Headline */}
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight max-w-3xl mx-auto leading-[1.12]">
             Never Forget a Date <br className="hidden sm:inline" />
