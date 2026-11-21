@@ -51,6 +51,11 @@ export function AppProvider({ children }) {
     return INITIAL_USER_CUSTOM_CATEGORIES;
   });
 
+  // Global Categories Catalog
+  const [globalCategories, setGlobalCategories] = useState(() => {
+    return PRIMARY_GLOBAL_CATEGORIES;
+  });
+
   // Predefined Global Events Catalog
   const [globalEvents, setGlobalEvents] = useState(() => {
     const saved = localStorage.getItem('ndr_global_events');
@@ -72,7 +77,7 @@ export function AppProvider({ children }) {
   const showToast = (message, type = 'info', title = null, duration = 4000) => {
     const id = Date.now() + Math.random();
     const newToast = { id, message, type, title };
-    setToasts((prev) => [newToast, ...prev].slice(0, 4)); // Stack max 4 toasts
+    setToasts((prev) => [newToast, ...prev].slice(0, 4));
 
     if (duration > 0) {
       setTimeout(() => {
@@ -84,11 +89,12 @@ export function AppProvider({ children }) {
   // Sync data with backend MongoDB when authenticated
   const loadDataFromBackend = async () => {
     try {
-      const [remRes, catRes, evRes, subRes] = await Promise.allSettled([
-        api.getReminders(),
+      const [remRes, catRes, evRes, subRes, globCatRes] = await Promise.allSettled([
+        api.getReminders('status=all'),
         api.getCategories(),
         api.getGlobalEvents(),
-        api.getSubscriptions()
+        api.getSubscriptions(),
+        api.getGlobalCategories()
       ]);
 
       if (remRes.status === 'fulfilled' && remRes.value?.data) {
@@ -97,6 +103,9 @@ export function AppProvider({ children }) {
             ...r,
             id: r._id,
             date: r.eventDate,
+            priority: r.priority || 'normal',
+            isCompleted: !!r.isCompleted,
+            isArchived: !!r.isArchived,
             channels: r.notificationChannels?.map(c => c.charAt(0).toUpperCase() + c.slice(1)) || ['Email'],
             reminderDaysBefore: r.reminderSchedules?.[0] ?? 3
           })));
@@ -110,6 +119,10 @@ export function AppProvider({ children }) {
             id: c._id
           })));
         }
+      }
+
+      if (globCatRes.status === 'fulfilled' && globCatRes.value?.data && globCatRes.value.data.length > 0) {
+        setGlobalCategories(globCatRes.value.data);
       }
 
       if (evRes.status === 'fulfilled' && evRes.value?.data && evRes.value.data.length > 0) {
@@ -155,16 +168,19 @@ export function AppProvider({ children }) {
             masterEnabled: true,
             globalEventsEnabled: true,
             personalRemindersEnabled: true,
-            uncategorizedRemindersEnabled: true,
-            email: { enabled: true, address: fbUser.email, verified: true },
-            whatsapp: { enabled: false, number: '', verified: false },
-            browserPush: { enabled: true, permission: 'granted' },
+            uncategorizedRemindersEnabled: { email: true, push: true, whatsapp: false },
+            personalCategoryPreferences: {},
+            globalCategoryPreferences: {},
+            channels: {
+              email: { enabled: true, address: fbUser.email, verified: true },
+              whatsapp: { enabled: false, phoneNumber: '', verified: false, status: 'Coming Soon' },
+              push: { enabled: true }
+            },
             defaultAdvanceDays: 3,
             digestTime: '09:00'
           }
         };
 
-        // Attempt to fetch extra profile attributes from MongoDB
         try {
           const profileRes = await api.getProfile();
           if (profileRes?.data) {
@@ -184,12 +200,20 @@ export function AppProvider({ children }) {
           console.warn('Could not retrieve DB profile info:', profileErr.message);
         }
 
+        try {
+          const prefRes = await api.getNotificationPreferences();
+          if (prefRes?.data) {
+            userObj.notificationPreferences = prefRes.data;
+          }
+        } catch (prefErr) {
+          console.warn('Could not retrieve DB notification preferences:', prefErr.message);
+        }
+
         setCurrentUser(userObj);
         setIsAuthenticated(true);
         localStorage.setItem('ndr_user', JSON.stringify(userObj));
         localStorage.setItem('ndr_auth', 'true');
 
-        // Fetch user reminders & categories from MongoDB
         loadDataFromBackend();
       } else {
         setIsAuthenticated(false);
@@ -251,12 +275,14 @@ export function AppProvider({ children }) {
     const createdLocal = {
       ...newReminder,
       id: tempId,
+      priority: newReminder.priority || 'normal',
+      isCompleted: false,
+      isArchived: false,
       isActive: true
     };
     setReminders(prev => [createdLocal, ...prev]);
     showToast(`Created reminder: "${createdLocal.title}"`, 'success');
 
-    // Sync with MongoDB backend if available
     try {
       const res = await api.createReminder({
         title: newReminder.title,
@@ -265,6 +291,7 @@ export function AppProvider({ children }) {
         categoryId: newReminder.categoryId,
         categoryName: newReminder.categoryName,
         recurrence: newReminder.recurrence,
+        priority: newReminder.priority || 'normal',
         reminderSchedules: [newReminder.reminderDaysBefore || 3],
         notificationChannels: newReminder.channels?.map(c => c.toLowerCase()) || ['email'],
         notes: newReminder.notes
@@ -291,7 +318,10 @@ export function AppProvider({ children }) {
         ...(updatedFields.categoryName && { categoryName: updatedFields.categoryName }),
         ...(updatedFields.categoryId !== undefined && { categoryId: updatedFields.categoryId }),
         ...(updatedFields.recurrence && { recurrence: updatedFields.recurrence }),
-        ...(updatedFields.notes !== undefined && { notes: updatedFields.notes })
+        ...(updatedFields.priority && { priority: updatedFields.priority }),
+        ...(updatedFields.notes !== undefined && { notes: updatedFields.notes }),
+        ...(updatedFields.isCompleted !== undefined && { isCompleted: updatedFields.isCompleted }),
+        ...(updatedFields.isArchived !== undefined && { isArchived: updatedFields.isArchived })
       });
     } catch (err) {
       console.warn('Backend update failed:', err.message);
@@ -306,6 +336,37 @@ export function AppProvider({ children }) {
       await api.deleteReminder(id);
     } catch (err) {
       console.warn('Backend delete failed:', err.message);
+    }
+  };
+
+  const bulkActionReminders = async (ids, action) => {
+    if (!Array.isArray(ids) || ids.length === 0) return;
+
+    if (action === 'archive') {
+      setReminders(prev => prev.map(r => ids.includes(r.id) ? { ...r, isArchived: true } : r));
+      showToast(`Archived ${ids.length} reminder(s)`, 'success');
+    } else if (action === 'restore') {
+      setReminders(prev => prev.map(r => ids.includes(r.id) ? { ...r, isArchived: false } : r));
+      showToast(`Restored ${ids.length} reminder(s)`, 'success');
+    } else if (action === 'complete') {
+      setReminders(prev => prev.map(r => ids.includes(r.id) ? { ...r, isCompleted: true } : r));
+      showToast(`Marked ${ids.length} reminder(s) completed`, 'success');
+    } else if (action === 'uncomplete') {
+      setReminders(prev => prev.map(r => ids.includes(r.id) ? { ...r, isCompleted: false } : r));
+      showToast(`Marked ${ids.length} reminder(s) active`, 'success');
+    } else if (action === 'delete') {
+      setReminders(prev => prev.filter(r => !ids.includes(r.id)));
+      showToast(`Deleted ${ids.length} reminder(s)`, 'info');
+    }
+
+    try {
+      // Send bulk action to backend for real MongoDB ids
+      const validMongoIds = ids.filter(id => /^[0-9a-fA-F]{24}$/.test(id));
+      if (validMongoIds.length > 0) {
+        await api.bulkReminders({ ids: validMongoIds, action });
+      }
+    } catch (err) {
+      console.warn('Bulk backend update failed:', err.message);
     }
   };
 
@@ -325,7 +386,7 @@ export function AppProvider({ children }) {
     try {
       const res = await api.createCategory({ name: name.trim(), color, icon });
       if (res?.data?._id) {
-        setCustomCategories(prev => prev.map(c => c.id === tempId ? { ...c, id: res.data._id } : c));
+        setCustomCategories(prev => prev.map(c => c.id === tempId ? { ...c, id: res.data._id, _id: res.data._id } : c));
       }
     } catch (err) {
       console.warn('Backend category sync failed:', err.message);
@@ -356,7 +417,6 @@ export function AppProvider({ children }) {
     setReminders(prev => prev.map(r => r.categoryId === id ? { ...r, categoryId: null, categoryName: 'Uncategorized' } : r));
     showToast(`Category "${catToDelete?.name || ''}" deleted. Reminders moved to Uncategorized.`, 'info');
 
-    // Only call API if it is a real MongoDB ObjectId (24 hex characters)
     if (/^[0-9a-fA-F]{24}$/.test(id)) {
       try {
         await api.deleteCategory(id);
@@ -436,16 +496,18 @@ export function AppProvider({ children }) {
         addReminder,
         updateReminder,
         deleteReminder,
+        bulkActionReminders,
         customCategories,
         addCategory,
         updateCategory,
         deleteCategory,
         suggestedCategories: SUGGESTED_PERSONAL_CATEGORIES,
-        globalCategories: PRIMARY_GLOBAL_CATEGORIES,
+        globalCategories,
         globalEvents,
         toggleEventSubscription,
         subscribeEntireCategory,
         updateUserSettings,
+        loadDataFromBackend,
         toasts,
         dismissToast,
         showToast

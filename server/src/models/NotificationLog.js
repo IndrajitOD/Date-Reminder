@@ -8,6 +8,11 @@ const notificationLogSchema = new mongoose.Schema(
       required: true,
       index: true
     },
+    reminderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'PersonalReminder',
+      default: null
+    },
     eventName: {
       type: String,
       required: true
@@ -20,7 +25,8 @@ const notificationLogSchema = new mongoose.Schema(
     channel: {
       type: String,
       enum: ['email', 'push', 'whatsapp'],
-      required: true
+      required: true,
+      index: true
     },
     scheduledDate: {
       type: Date,
@@ -28,13 +34,21 @@ const notificationLogSchema = new mongoose.Schema(
     },
     deliveryStatus: {
       type: String,
-      enum: ['pending', 'delivered', 'failed', 'suppressed'],
+      enum: ['pending', 'delivered', 'failed', 'cancelled', 'suppressed'],
       default: 'pending',
       index: true
     },
     failureReason: {
       type: String,
       default: ''
+    },
+    retryCount: {
+      type: Number,
+      default: 0
+    },
+    maxRetries: {
+      type: Number,
+      default: 3
     },
     deliveredAt: {
       type: Date,
@@ -45,5 +59,7 @@ const notificationLogSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+notificationLogSchema.index({ userId: 1, deliveryStatus: 1, createdAt: -1 });
 
 export const NotificationLog = mongoose.model('NotificationLog', notificationLogSchema);

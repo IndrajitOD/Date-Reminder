@@ -37,6 +37,7 @@ export const api = {
   getReminders: (params = '') => request(`/reminders${params ? `?${params}` : ''}`),
   createReminder: (payload) => request('/reminders', { method: 'POST', body: JSON.stringify(payload) }),
   updateReminder: (id, payload) => request(`/reminders/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  bulkReminders: (payload) => request('/reminders/bulk', { method: 'POST', body: JSON.stringify(payload) }),
   deleteReminder: (id) => request(`/reminders/${id}`, { method: 'DELETE' }),
 
   // Categories
@@ -45,7 +46,8 @@ export const api = {
   updateCategory: (id, payload) => request(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteCategory: (id) => request(`/categories/${id}`, { method: 'DELETE' }),
 
-  // Global Events
+  // Global Categories & Events
+  getGlobalCategories: () => request('/global-categories'),
   getGlobalEvents: (params = '') => request(`/global-events${params ? `?${params}` : ''}`),
   getSubscriptions: () => request('/global-events/subscriptions'),
   subscribeEvent: (payload) => request('/global-events/subscribe', { method: 'POST', body: JSON.stringify(payload) }),
@@ -54,7 +56,12 @@ export const api = {
   // Notifications
   getNotificationPreferences: () => request('/notifications/preferences'),
   updateNotificationPreferences: (payload) => request('/notifications/preferences', { method: 'PUT', body: JSON.stringify(payload) }),
-  getNotificationLogs: () => request('/notifications/logs'),
+  getNotificationLogs: (params = '') => request(`/notifications/logs${params ? `?${params}` : ''}`),
+  retryNotification: (id) => request(`/notifications/logs/${id}/retry`, { method: 'POST' }),
+
+  // WhatsApp Management
+  connectWhatsApp: (payload) => request('/notifications/whatsapp/connect', { method: 'POST', body: JSON.stringify(payload) }),
+  disconnectWhatsApp: () => request('/notifications/whatsapp/disconnect', { method: 'POST' }),
 
   // Account & Profile Management
   getProfile: () => request('/auth/me'),

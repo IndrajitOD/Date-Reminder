@@ -10,6 +10,7 @@ import reminderRoutes from './src/routes/reminderRoutes.js';
 import categoryRoutes from './src/routes/categoryRoutes.js';
 import globalEventRoutes from './src/routes/globalEventRoutes.js';
 import notificationRoutes from './src/routes/notificationRoutes.js';
+import globalCategoryRoutes from './src/routes/globalCategoryRoutes.js';
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ app.use('/api/v1/reminders', reminderRoutes);
 app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1/global-events', globalEventRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/global-categories', globalCategoryRoutes);
 
 // Centralized error handling middleware
 app.use((err, req, res, next) => {

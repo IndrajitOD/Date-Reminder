@@ -38,6 +38,22 @@ const personalReminderSchema = new mongoose.Schema(
       enum: ['none', 'daily', 'weekly', 'monthly', 'yearly', 'custom'],
       default: 'yearly'
     },
+    priority: {
+      type: String,
+      enum: ['low', 'normal', 'high', 'critical'],
+      default: 'normal',
+      index: true
+    },
+    isCompleted: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    isArchived: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
     reminderSchedules: {
       type: [Number], // e.g. [0, 1, 3, 7] days before
       default: [3]
@@ -62,5 +78,6 @@ const personalReminderSchema = new mongoose.Schema(
 );
 
 personalReminderSchema.index({ userId: 1, eventDate: 1 });
+personalReminderSchema.index({ userId: 1, isArchived: 1, isCompleted: 1 });
 
 export const PersonalReminder = mongoose.model('PersonalReminder', personalReminderSchema);

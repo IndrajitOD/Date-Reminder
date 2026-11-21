@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { X, Calendar, User, Tag, Clock, Bell, AlertCircle, Plus } from 'lucide-react';
+import { X, Calendar, User, Tag, Clock, Bell, AlertCircle, Plus, Flag } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import CustomSelect from './common/CustomSelect';
 
-export default function ReminderModal({ onClose, editData = null }) {
+export default function ReminderModal({ onClose, editData = null, isDuplicate = false }) {
   const { 
     addReminder, 
     updateReminder, 
@@ -12,11 +12,14 @@ export default function ReminderModal({ onClose, editData = null }) {
     addCategory 
   } = useApp();
 
-  const [title, setTitle] = useState(editData?.title || '');
+  const [title, setTitle] = useState(
+    isDuplicate ? `Copy of ${editData?.title || ''}` : (editData?.title || '')
+  );
   const [personName, setPersonName] = useState(editData?.personName || '');
   const [date, setDate] = useState(editData?.date || '');
   const [categoryName, setCategoryName] = useState(editData?.categoryName || 'Uncategorized');
   const [recurrence, setRecurrence] = useState(editData?.recurrence || 'yearly');
+  const [priority, setPriority] = useState(editData?.priority || 'normal');
   const [notes, setNotes] = useState(editData?.notes || '');
   const [reminderDaysBefore, setReminderDaysBefore] = useState(editData?.reminderDaysBefore || 3);
   const [channels, setChannels] = useState(editData?.channels || ['Email']);
@@ -72,14 +75,16 @@ export default function ReminderModal({ onClose, editData = null }) {
       categoryName: categoryName === 'Uncategorized' ? 'Uncategorized' : categoryName,
       categoryId: validCatId,
       recurrence,
+      priority,
       notes: notes.trim(),
       reminderDaysBefore: Number(reminderDaysBefore),
       channels
     };
 
-    if (editData?.id) {
+    if (editData?.id && !isDuplicate) {
       updateReminder(editData.id, payload);
     } else {
+      // New reminder or duplicated reminder
       addReminder(payload);
     }
     onClose();
@@ -99,9 +104,13 @@ export default function ReminderModal({ onClose, editData = null }) {
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h3 className="font-extrabold text-lg text-slate-900">
-              {editData ? 'Edit Reminder' : 'New Reminder'}
+              {isDuplicate ? 'Duplicate Reminder' : (editData ? 'Edit Reminder' : 'New Reminder')}
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">Automated multi-channel alerting schedule</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {isDuplicate 
+                ? 'Review and adjust parameters before saving as a new reminder'
+                : 'Automated multi-channel alerting schedule'}
+            </p>
           </div>
           <button 
             onClick={onClose} 
@@ -190,7 +199,7 @@ export default function ReminderModal({ onClose, editData = null }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Date *
@@ -200,25 +209,42 @@ export default function ReminderModal({ onClose, editData = null }) {
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                className="w-full px-3.5 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
               />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Recurrence Rule
+                Recurrence
               </label>
               <CustomSelect
                 className="w-full"
                 value={recurrence}
                 onChange={(e) => setRecurrence(e.target.value)}
                 options={[
-                  { value: 'none', label: 'Does not repeat (One-time)' },
+                  { value: 'none', label: 'One-time' },
                   { value: 'daily', label: 'Daily' },
                   { value: 'weekly', label: 'Weekly' },
                   { value: 'monthly', label: 'Monthly' },
-                  { value: 'yearly', label: 'Yearly (Annual)' },
-                  { value: 'custom', label: 'Custom schedule' }
+                  { value: 'yearly', label: 'Yearly' },
+                  { value: 'custom', label: 'Custom' }
+                ]}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Priority
+              </label>
+              <CustomSelect
+                className="w-full"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                options={[
+                  { value: 'low', label: 'Low' },
+                  { value: 'normal', label: 'Normal' },
+                  { value: 'high', label: 'High' },
+                  { value: 'critical', label: 'Critical' }
                 ]}
               />
             </div>
@@ -234,7 +260,7 @@ export default function ReminderModal({ onClose, editData = null }) {
                 value={reminderDaysBefore}
                 onChange={(e) => setReminderDaysBefore(Number(e.target.value))}
                 options={[
-                  { value: 0, label: 'On event day (0 days before)' },
+                  { value: 0, label: 'On event day (0d)' },
                   { value: 1, label: '1 day before' },
                   { value: 3, label: '3 days before' },
                   { value: 7, label: '7 days before' }
@@ -290,7 +316,7 @@ export default function ReminderModal({ onClose, editData = null }) {
               type="submit"
               className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-rose-500 to-red-600 text-white font-bold text-xs shadow-md shadow-rose-500/25 active:scale-95 transition-all"
             >
-              {editData ? 'Save Changes' : 'Create Reminder'}
+              {isDuplicate ? 'Save as New' : (editData ? 'Save Changes' : 'Create Reminder')}
             </button>
           </div>
         </form>
