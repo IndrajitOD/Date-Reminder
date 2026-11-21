@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { NavLink, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import ProfileAvatar from '../components/common/ProfileAvatar';
 
 export default function AppLayout() {
   const { currentUser, logout } = useApp();
@@ -159,17 +160,7 @@ export default function AppLayout() {
         <div className="p-4 border-t border-slate-100/90 shrink-0 bg-white">
           <div className="flex items-center justify-between gap-3">
             <Link to="/app/profile" className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-85 transition-opacity">
-              {currentUser?.photoURL ? (
-                <img 
-                  src={currentUser.photoURL} 
-                  alt={currentUser.name} 
-                  className="w-10 h-10 rounded-2xl object-cover shrink-0 border border-slate-200"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 font-black flex items-center justify-center text-sm border border-rose-100 shrink-0">
-                  {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
-                </div>
-              )}
+              <ProfileAvatar user={currentUser} size="sm" />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-slate-800 truncate leading-tight">
                   {currentUser?.name || 'User Profile'}
@@ -182,7 +173,7 @@ export default function AppLayout() {
 
             <button 
               onClick={() => setShowLogoutModal(true)}
-              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors shrink-0"
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors shrink-0 cursor-pointer"
               title="Sign Out"
               aria-label="Sign Out"
             >

@@ -9,7 +9,8 @@ import RemindersPage from './pages/RemindersPage';
 import ImportantDatesPage from './pages/ImportantDatesPage';
 import SettingsPage from './pages/SettingsPage';
 import AboutPage from './pages/AboutPage';
-import { CalendarViewPage, ProfilePage } from './pages/AdditionalPages';
+import { CalendarViewPage } from './pages/AdditionalPages';
+import { ProfilePage } from './pages/ProfilePage';
 import GlobalToastContainer from './components/common/GlobalToast';
 import './App.css';
 

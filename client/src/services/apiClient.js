@@ -54,5 +54,10 @@ export const api = {
   // Notifications
   getNotificationPreferences: () => request('/notifications/preferences'),
   updateNotificationPreferences: (payload) => request('/notifications/preferences', { method: 'PUT', body: JSON.stringify(payload) }),
-  getNotificationLogs: () => request('/notifications/logs')
+  getNotificationLogs: () => request('/notifications/logs'),
+
+  // Account & Profile Management
+  getProfile: () => request('/auth/me'),
+  updateProfile: (payload) => request('/auth/profile', { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteAccount: () => request('/auth/delete-account', { method: 'DELETE' })
 };

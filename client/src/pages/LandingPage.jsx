@@ -267,7 +267,7 @@ export default function LandingPage() {
 
       {/* 3. Footer */}
       <footer className="border-t border-slate-200/80 bg-white py-6 px-4 text-center text-xs text-slate-500 font-medium">
-        <p>Created with ❤️ by Indrajit Bhowmick</p>
+        <p>Created by Indrajit Bhowmick</p>
       </footer>
 
       {/* Authentication Popup Modal over Landing Page */}

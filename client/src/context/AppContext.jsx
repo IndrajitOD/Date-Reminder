@@ -131,6 +131,8 @@ export function AppProvider({ children }) {
     const unsubscribe = subscribeToAuthChanges(async (fbUser) => {
       if (fbUser) {
         const idToken = await fbUser.getIdToken();
+        const providers = fbUser.providerData.map(p => p.providerId);
+        
         const userObj = {
           id: fbUser.uid,
           firebaseUid: fbUser.uid,
@@ -138,11 +140,17 @@ export function AppProvider({ children }) {
           email: fbUser.email || '',
           photoURL: fbUser.photoURL || '',
           phone: fbUser.phoneNumber || '',
+          emailVerified: fbUser.emailVerified || false,
+          providerId: fbUser.providerData?.[0]?.providerId || 'password',
+          providers: providers.length > 0 ? providers : ['password'],
+          creationTime: fbUser.metadata?.creationTime || '',
+          lastSignInTime: fbUser.metadata?.lastSignInTime || '',
           token: idToken,
-          timezone: currentUser?.timezone || 'America/New_York (UTC-5)',
+          timezone: currentUser?.timezone || 'UTC',
           dateFormat: currentUser?.dateFormat || 'MMM DD, YYYY',
           timeFormat: currentUser?.timeFormat || '12h',
           defaultCalendarView: currentUser?.defaultCalendarView || 'month',
+          language: currentUser?.language || 'English (US)',
           notificationPreferences: currentUser?.notificationPreferences || {
             masterEnabled: true,
             globalEventsEnabled: true,
@@ -155,12 +163,33 @@ export function AppProvider({ children }) {
             digestTime: '09:00'
           }
         };
+
+        // Attempt to fetch extra profile attributes from MongoDB
+        try {
+          const profileRes = await api.getProfile();
+          if (profileRes?.data) {
+            userObj.name = profileRes.data.name || userObj.name;
+            userObj.phone = profileRes.data.phoneNumber || userObj.phone;
+            userObj.timezone = profileRes.data.timezone || userObj.timezone;
+            userObj.language = profileRes.data.language || userObj.language;
+            userObj.dateFormat = profileRes.data.dateFormat || userObj.dateFormat;
+            userObj.timeFormat = profileRes.data.timeFormat || userObj.timeFormat;
+            userObj.createdAt = profileRes.data.createdAt || userObj.creationTime;
+            userObj.updatedAt = profileRes.data.updatedAt;
+            if (profileRes.data.profilePicture) {
+              userObj.photoURL = profileRes.data.profilePicture;
+            }
+          }
+        } catch (profileErr) {
+          console.warn('Could not retrieve DB profile info:', profileErr.message);
+        }
+
         setCurrentUser(userObj);
         setIsAuthenticated(true);
         localStorage.setItem('ndr_user', JSON.stringify(userObj));
         localStorage.setItem('ndr_auth', 'true');
 
-        // Fetch user data from MongoDB
+        // Fetch user reminders & categories from MongoDB
         loadDataFromBackend();
       } else {
         setIsAuthenticated(false);

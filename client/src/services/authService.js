@@ -8,7 +8,11 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult
+  getRedirectResult,
+  sendEmailVerification,
+  deleteUser as fbDeleteUser,
+  reauthenticateWithCredential,
+  EmailAuthProvider
 } from 'firebase/auth';
 import { auth } from './firebase';
 
@@ -19,7 +23,6 @@ export async function loginWithGoogle() {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
   } catch (error) {
-    // If running inside an iframe/editor preview that blocks window.open popups, fallback to redirect
     if (error.code === 'auth/popup-blocked' || error.code === 'auth/operation-not-supported-in-this-environment') {
       await signInWithRedirect(auth, googleProvider);
       return null;
@@ -57,6 +60,25 @@ export async function logoutFromFirebase() {
 
 export async function resetPasswordWithFirebase(email) {
   await sendPasswordResetEmail(auth, email);
+}
+
+export async function updateFirebaseProfile({ displayName, photoURL }) {
+  if (!auth.currentUser) throw new Error('No authenticated user found');
+  const updates = {};
+  if (displayName !== undefined) updates.displayName = displayName;
+  if (photoURL !== undefined) updates.photoURL = photoURL;
+  await updateProfile(auth.currentUser, updates);
+  return auth.currentUser;
+}
+
+export async function sendFirebaseEmailVerification() {
+  if (!auth.currentUser) throw new Error('No authenticated user found');
+  await sendEmailVerification(auth.currentUser);
+}
+
+export async function deleteFirebaseUser() {
+  if (!auth.currentUser) throw new Error('No authenticated user found');
+  await fbDeleteUser(auth.currentUser);
 }
 
 export function subscribeToAuthChanges(callback) {

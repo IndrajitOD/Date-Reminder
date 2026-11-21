@@ -53,6 +53,10 @@ const userSchema = new mongoose.Schema(
     country: {
       type: String,
       default: 'Global'
+    },
+    language: {
+      type: String,
+      default: 'English (US)'
     }
   },
   {
