@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Calendar, ArrowRight, Menu, X, 
-  Sparkles, Heart, Award, Shield, Bell, CheckCircle2
+  Sparkles, Globe, CalendarDays, Bell, Tag, Clock
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import AuthModal from '../components/AuthModal';
 
 export default function LandingPage() {
   const { isAuthenticated } = useApp();
-  const navigate = useNavigate();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -44,6 +43,39 @@ export default function LandingPage() {
     }
   }, [mobileMenuOpen, authModalOpen]);
 
+  const featureCards = [
+    {
+      icon: Calendar,
+      title: 'Personal Reminders',
+      description: 'Save birthdays, anniversaries, appointments, deadlines, and all the dates that matter to you.'
+    },
+    {
+      icon: Globe,
+      title: 'Important Dates',
+      description: 'Explore festivals, holidays, awareness days, and special occasions from around the world.'
+    },
+    {
+      icon: CalendarDays,
+      title: 'Smart Calendar',
+      description: 'View your personal reminders and important global events together in one convenient calendar.'
+    },
+    {
+      icon: Bell,
+      title: 'Timely Notifications',
+      description: 'Stay informed with reminders before your important dates through supported notification channels.'
+    },
+    {
+      icon: Tag,
+      title: 'Custom Categories',
+      description: 'Keep your dates organized with predefined categories or create your own.'
+    },
+    {
+      icon: Clock,
+      title: 'Flexible Scheduling',
+      description: 'Choose reminder timings and recurring schedules that suit your needs.'
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-[#f4f5f9] flex flex-col text-slate-800">
       {/* 
@@ -75,16 +107,10 @@ export default function LandingPage() {
 
           {/* 
             Desktop Navigation:
-            - Minimal right side: Optional Preview jump link + Authentication Action buttons
+            - Simplified right side: Sign In + Get Started (or Go to Dashboard)
+            - No "Preview" link
           */}
-          <div className="hidden md:flex items-center gap-4">
-            <a 
-              href="#preview" 
-              className="text-sm font-semibold text-slate-500 hover:text-slate-900 px-3 py-2 rounded-xl transition-colors"
-            >
-              Preview
-            </a>
-
+          <div className="hidden md:flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
               <Link
                 to="/app"
@@ -93,7 +119,7 @@ export default function LandingPage() {
                 Go to Dashboard
               </Link>
             ) : (
-              <div className="flex items-center gap-2">
+              <>
                 <button
                   type="button"
                   onClick={openSignInModal}
@@ -109,7 +135,7 @@ export default function LandingPage() {
                   <span>Get Started</span>
                   <ArrowRight size={15} />
                 </button>
-              </div>
+              </>
             )}
           </div>
 
@@ -160,8 +186,8 @@ export default function LandingPage() {
       </header>
 
       {/* Main Page Container: Top padding ensures content starts below the fixed navbar */}
-      <main className="flex-1 pt-20 sm:pt-24 pb-12">
-        {/* Hero Section */}
+      <main className="flex-1 pt-24 sm:pt-28 pb-16">
+        {/* 1. Hero Section */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
           {/* Introductory badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-100 mb-5 shadow-xs">
@@ -182,7 +208,7 @@ export default function LandingPage() {
             Keep every important moment close. Organize birthdays, anniversaries, and personal milestones in one place, with smart alerts delivered right on time.
           </p>
 
-          {/* Primary CTA Buttons */}
+          {/* Primary CTA Button */}
           <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
             {isAuthenticated ? (
               <Link
@@ -203,85 +229,54 @@ export default function LandingPage() {
               </button>
             )}
           </div>
+        </section>
 
-          {/* Live Alert Monitor Preview Card */}
-          <div className="mt-10 sm:mt-12 max-w-2xl mx-auto text-left" id="preview">
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0c0f17] via-[#120d18] to-[#180b15] text-white p-5 sm:p-7 shadow-2xl shadow-slate-900/15 border border-slate-800">
-              {/* Radial gradient glow */}
-              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 rounded-full bg-gradient-to-br from-rose-600/30 via-red-600/10 to-transparent blur-3xl pointer-events-none" />
+        {/* 2. Feature Showcase Section */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20">
+          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
+              Everything Important, Never Forgotten.
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-slate-500 leading-relaxed">
+              One simple place to organize your important dates and receive timely reminders.
+            </p>
+          </div>
 
-              <div className="relative z-10 flex items-center justify-between pb-3.5 border-b border-slate-800/90 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-rose-400">Live Alert Monitor</span>
-                </div>
-                <span className="text-xs text-slate-400 font-medium">3 Upcoming Notifications</span>
-              </div>
+          {/* 6 Feature Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {featureCards.map((card, idx) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={idx}
+                  className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-rose-200 transition-all duration-200 flex flex-col justify-between group"
+                >
+                  <div>
+                    {/* Pink/Red Accent Icon Badge */}
+                    <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mb-5 group-hover:scale-105 group-hover:bg-rose-100/80 transition-all duration-200 shadow-xs">
+                      <Icon size={22} className="stroke-[2.2]" />
+                    </div>
 
-              {/* Event Cards */}
-              <div className="relative z-10 space-y-2.5">
-                <div className="bg-white/5 hover:bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/5 flex items-center justify-between gap-3 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
-                      <Heart size={16} />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-white text-sm truncate">Mom's Birthday Celebration</h4>
-                      <p className="text-xs text-slate-400 mt-0.5">Nov 28 • Notice: 3 days prior</p>
-                    </div>
-                  </div>
-                  <div className="shrink-0 flex items-center gap-2">
-                    <span className="text-xs font-bold bg-rose-500 text-white px-2.5 py-1 rounded-xl shadow-xs">
-                      In 7 days
-                    </span>
-                  </div>
-                </div>
+                    {/* Dark Navy Heading */}
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight mb-2">
+                      {card.title}
+                    </h3>
 
-                <div className="bg-white/5 hover:bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/5 flex items-center justify-between gap-3 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-                      <Award size={16} />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-white text-sm truncate">Health Insurance Renewal</h4>
-                      <p className="text-xs text-slate-400 mt-0.5">Dec 01 • Annual Policy Renewal</p>
-                    </div>
-                  </div>
-                  <div className="shrink-0 flex items-center gap-2">
-                    <span className="text-xs font-bold bg-amber-500 text-slate-950 px-2.5 py-1 rounded-xl shadow-xs">
-                      In 10 days
-                    </span>
+                    {/* Muted Description */}
+                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                      {card.description}
+                    </p>
                   </div>
                 </div>
-
-                <div className="bg-white/5 hover:bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/5 flex items-center justify-between gap-3 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
-                      <Calendar size={16} />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-white text-sm truncate">Diwali Festival of Lights</h4>
-                      <p className="text-xs text-slate-400 mt-0.5">Catalog Subscription • Cultural</p>
-                    </div>
-                  </div>
-                  <div className="shrink-0 flex items-center gap-2">
-                    <span className="text-xs font-bold bg-blue-500/80 text-white px-2.5 py-1 rounded-xl shadow-xs">
-                      In 14 days
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200/80 bg-white py-6 px-4 text-center text-xs text-slate-400">
-        <p>© 2026 Date Reminder. All rights reserved.</p>
+      {/* 3. Footer */}
+      <footer className="border-t border-slate-200/80 bg-white py-6 px-4 text-center text-xs text-slate-500 font-medium">
+        <p>Created with ❤️ by Indrajit Bhowmick</p>
       </footer>
 
       {/* Authentication Popup Modal over Landing Page */}
